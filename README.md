@@ -1,6 +1,6 @@
 # GC-AI: Local Testing Environment
 
-This repository is used for testing the application locally and is intended only for reviewers. The final project will be available on a website.
+This repository provides an easy way to test the GC-AI application locally using Docker. Anyone interested in running the project on their machine can follow these simple steps.
 
 🚨 **Important:** After starting the project, it is recommended to wait a few minutes to allow the database and the prediction model to fully load. This helps prevent potential connection or initialization errors.
 
@@ -52,3 +52,5 @@ docker compose down -v
 
 ## 📌 Notes
 - No manual configuration is required—everything is ready to run with Docker.
+- If you encounter any issues, try restarting Docker and running the commands again.
+

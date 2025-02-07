@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: cvtalrc/gc-ai-db  #
+    image: cvtalrc/gc-ai-db  
     container_name: igem_db
     restart: always
     environment:

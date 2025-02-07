@@ -2,6 +2,8 @@
 
 This repository is used for testing the application locally and is intended only for reviewers. The final project will be available on a website.
 
+🚨 **Important:** After starting the project, it is recommended to wait a few minutes to allow the database and the prediction model to fully load. This helps prevent potential connection or initialization errors.
+
 ## 🚀 Installation and Execution
 
 ### 1️⃣ **Prerequisites**
@@ -50,4 +52,3 @@ docker compose down -v
 
 ## 📌 Notes
 - No manual configuration is required—everything is ready to run with Docker.
-

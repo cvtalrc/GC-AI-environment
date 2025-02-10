@@ -23,7 +23,7 @@ docker compose version
 ### 2️⃣ **Download the Project**
 Clone the repository or download the `docker-compose.yml` file into a local folder:
 ```sh
-git clone https://github.com/cvtalrc/GC-AI-environment.git
+git clone git@github.com:cvtalrc/GC-AI-environment.git
 cd GC-AI-environment
 ```
 

@@ -36,8 +36,8 @@ This will download the necessary images and start the services automatically.
 
 ### 4️⃣ **Access the Application**
 Once the containers are running, you can access:
-- **Frontend:** [http://localhost](http://localhost)
-- **Backend API:** [http://localhost:5000](http://localhost:5000)
+- **Frontend:** [http://localhost](http://localhost:8081)
+- **Backend API:** [http://localhost:5000](http://localhost:5001)
 - **Database:** MySQL will be available on port `3307` (user `root`, password `igemparts2024`).
 
 ### 5️⃣ **Stop the Application**

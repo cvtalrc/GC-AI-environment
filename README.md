@@ -81,20 +81,7 @@ Replace `<PID>` with the actual process ID.
   ports:
     - "3308:3306"  # Change 3307 to another available port
   ```
-   ⚠️ If you change the database port, make sure to update the DB_PORT variable in the backend section of docker-compose.yml to reflect the new port. For example:
-    ```yaml
-      backend:
-        image: cvtalrc/gc-ai-backend:latest
-        environment:
-          DB_HOST: "db"
-          DB_PORT: "3308"  # Update to match the new port
-          DB_USER: "root"
-          DB_PASSWORD: "igemparts2024"
-          DB_NAME: "iGEM2024"
-          APP_HOST: '0.0.0.0'
-          APP_PORT: "5001"
-    ```
-
+  
 🚨 **The backend must remain on port 5001, as it is preconfigured to use this port. Do not change it.**
 
 ### 6️⃣ **Stop the Application**

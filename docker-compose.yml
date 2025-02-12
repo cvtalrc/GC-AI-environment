@@ -1,6 +1,6 @@
 services:
   backend:
-    image: cvtalrc/gc-ai-backend 
+    image: cvtalrc/gc-ai-backend:latest
     ports:
       - "5001:5001"
     environment:
@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: cvtalrc/gc-ai-frontend  
+    image: cvtalrc/gc-ai-frontend:latest
     ports:
       - "8081:80"
     environment:
@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: cvtalrc/gc-ai-db  
+    image: cvtalrc/gc-ai-db:latest
     container_name: igem_db
     restart: always
     environment:

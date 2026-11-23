@@ -1,0 +1,2 @@
+GRANT USAGE ON *.* TO `gcai`@`%`
+GRANT SELECT ON `iGEM2024`.`parts` TO `gcai`@`%`

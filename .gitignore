@@ -1,0 +1,5 @@
+.env
+secrets/
+assets/
+receipts/
+__pycache__/

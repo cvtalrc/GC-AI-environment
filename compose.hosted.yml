@@ -1,0 +1,27 @@
+# Use independently: docker compose -f compose.hosted.yml ...
+include:
+  - compose.services.yml
+services:
+  secret-init:
+    environment:
+      GCAI_PREPARE_PROXY: '1'
+    secrets:
+      - proxy_htpasswd
+      - tls_certificate
+      - tls_key
+  proxy:
+    extends:
+      file: compose.proxy.yml
+      service: proxy
+    ports:
+      - '443:443'
+    volumes:
+      - ./nginx/hosted.conf:/etc/nginx/nginx.conf:ro
+      - proxy-secrets:/run/gcai:ro
+secrets:
+  proxy_htpasswd:
+    file: ./secrets/htpasswd
+  tls_certificate:
+    file: ./secrets/tls.crt
+  tls_key:
+    file: ./secrets/tls.key

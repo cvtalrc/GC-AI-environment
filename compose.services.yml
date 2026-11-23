@@ -1,0 +1,157 @@
+services:
+  secret-init:
+    image: ${GCAI_BACKEND_IMAGE:?Set a reviewed backend image by digest}
+    user: '0:0'
+    entrypoint: ['python', '/bootstrap/prepare-secrets.py']
+    environment:
+      GCAI_UID: ${GCAI_UID:-10001}
+      GCAI_GID: ${GCAI_GID:-10001}
+      GCAI_MYSQL_UID: ${GCAI_MYSQL_UID:-999}
+      GCAI_MYSQL_GID: ${GCAI_MYSQL_GID:-999}
+      GCAI_NGINX_UID: ${GCAI_NGINX_UID:-101}
+      GCAI_NGINX_GID: ${GCAI_NGINX_GID:-101}
+    secrets:
+      - db_root_password
+      - db_app_password
+    volumes:
+      - ./scripts/prepare-secrets.py:/bootstrap/prepare-secrets.py:ro
+      - backend-secrets:/prepared/backend
+      - mysql-secrets:/prepared/mysql
+      - proxy-secrets:/prepared/proxy
+      - type: bind
+        source: ./assets/160_model.pth
+        target: /input/160_model.pth
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./assets/registry.sql
+        target: /input/registry.sql
+        read_only: true
+        bind:
+          create_host_path: false
+    network_mode: none
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+  artifact-init:
+    image: ${GCAI_BACKEND_IMAGE:?Set a reviewed backend image by digest}
+    user: '0:0'
+    entrypoint: ['python', '-c']
+    command: ["import os; p='/var/lib/gcai/artifacts'; os.chown(p,int(os.environ['GCAI_UID']),int(os.environ['GCAI_GID'])); os.chmod(p,0o700)"]
+    environment:
+      GCAI_UID: ${GCAI_UID:-10001}
+      GCAI_GID: ${GCAI_GID:-10001}
+    volumes:
+      - artifacts:/var/lib/gcai/artifacts
+    network_mode: none
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+  backend:
+    image: ${GCAI_BACKEND_IMAGE:?Set a reviewed backend image by digest}
+    user: '${GCAI_UID:-10001}:${GCAI_GID:-10001}'
+    command: ['gunicorn', '--bind=0.0.0.0:5001', '--workers=1', '--threads=4', '--timeout=180', '--access-logfile=-', 'app:create_app()']
+    environment:
+      DB_HOST: db
+      DB_PORT: '3306'
+      DB_USER: gcai
+      DB_NAME: iGEM2024
+      DB_PASSWORD_FILE: /run/gcai/db_app_password
+      GCAI_ARTIFACT_DIR: /var/lib/gcai/artifacts
+      GCAI_MODEL_PATH: /run/gcai/160_model.pth
+      GCAI_TRUSTED_ORIGINS: ${GCAI_TRUSTED_ORIGINS:?Set the exact browser origin}
+      GCAI_MAX_REQUEST_BYTES: '12582912'
+    volumes:
+      - artifacts:/var/lib/gcai/artifacts
+      - backend-secrets:/run/gcai:ro
+    networks:
+      - application
+      - registry
+    depends_on:
+      secret-init:
+        condition: service_completed_successfully
+      artifact-init:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:5001/livez', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+  janitor:
+    depends_on:
+      artifact-init:
+        condition: service_completed_successfully
+    image: ${GCAI_BACKEND_IMAGE:?Set a reviewed backend image by digest}
+    user: '${GCAI_UID:-10001}:${GCAI_GID:-10001}'
+    entrypoint: ['/bin/sh', '-c']
+    command: ['while true; do python -m app.utils.cleanup || exit; sleep 3600; done']
+    environment:
+      GCAI_ARTIFACT_DIR: /var/lib/gcai/artifacts
+    volumes:
+      - artifacts:/var/lib/gcai/artifacts
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+  db:
+    depends_on:
+      secret-init:
+        condition: service_completed_successfully
+    image: ${GCAI_MYSQL_IMAGE:?Set a MySQL 8.4 image by digest}
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/gcai/db_root_password
+      MYSQL_ROOT_HOST: localhost
+      MYSQL_DATABASE: iGEM2024
+    volumes:
+      - registry84:/var/lib/mysql
+      - mysql-secrets:/run/gcai:ro
+      - ./scripts/10-import-registry.sh:/docker-entrypoint-initdb.d/10-import-registry.sh:ro
+      - ./scripts/20-create-app-user.sh:/docker-entrypoint-initdb.d/20-create-app-user.sh:ro
+    networks:
+      - registry
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          umask 077;
+          config=$$(mktemp);
+          trap 'rm -f "$$config"' EXIT;
+          printf '[client]\nuser=gcai\npassword=%s\n' "$$(cat /run/gcai/db_app_password)" > "$$config";
+          test "$$(mysql --defaults-extra-file="$$config" --protocol=TCP -h127.0.0.1 --batch --skip-column-names -e 'SELECT 1')" = 1
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+volumes:
+  backend-secrets:
+  mysql-secrets:
+  proxy-secrets:
+  registry84:
+  artifacts:
+networks:
+  edge:
+    driver: bridge
+    internal: false
+  application:
+    internal: true
+  registry:
+    internal: true
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password
+  db_app_password:
+    file: ./secrets/db_app_password

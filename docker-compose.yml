@@ -1,57 +1,12 @@
+# Safe local profile; hosted operators must use compose.hosted.yml instead.
+include:
+  - compose.services.yml
 services:
-  backend:
-    image: cvtalrc/gc-ai-backend:latest
+  proxy:
+    extends:
+      file: compose.proxy.yml
+      service: proxy
     ports:
-      - "5001:5001"
-    environment:
-      DB_HOST: "db"
-      DB_PORT: "3306"
-      DB_USER: "root"
-      DB_PASSWORD: "igemparts2024"
-      DB_NAME: "iGEM2024"
-      APP_HOST: '0.0.0.0'
-      APP_PORT: "5001"
-    networks:
-      - app_network
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-
-  frontend:
-    image: cvtalrc/gc-ai-frontend:latest
-    ports:
-      - "8081:80"
-    networks:
-      - app_network
-    depends_on:
-      - backend
-    restart: unless-stopped
-
-  db:
-    image: cvtalrc/gc-ai-db:latest
-    container_name: igem_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: "igemparts2024"
-      MYSQL_DATABASE: "iGEM2024"
-    ports:
-      - "3307:3306"
+      - '127.0.0.1:8081:80'
     volumes:
-      - db-data:/var/lib/mysql
-     
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      retries: 5
-      start_period: 240s
-
-volumes:
-  db-data:  
-
-networks:
-  app_network:
-    driver: bridge
-  
+      - ./nginx/local.conf:/etc/nginx/nginx.conf:ro

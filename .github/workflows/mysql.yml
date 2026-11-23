@@ -1,0 +1,27 @@
+name: MySQL deployment smoke
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  mysql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fresh private MySQL migration and grants without detector build
+        run: tests/mysql-smoke.sh
+  asset-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import pinned synthetic legacy checkpoint and complete registry data
+        run: tests/asset-import-smoke.sh
+  proxy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hosted TLS authentication and published ports without detector build
+        run: tests/proxy-smoke.sh

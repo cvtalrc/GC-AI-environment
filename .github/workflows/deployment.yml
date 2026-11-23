@@ -1,0 +1,39 @@
+name: Deployment contracts
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Reviewed GC-AI commit SHA for integration image builds
+        required: true
+        type: string
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s tests -v
+      - run: python3 -m py_compile scripts/import-assets.py scripts/prepare-secrets.py
+      - run: bash -n scripts/10-import-registry.sh scripts/20-create-app-user.sh
+      - run: sh -n scripts/backup.sh scripts/root-sql.sh tests/docker-smoke.sh
+  docker:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: DRAGGON-Lab/GC-AI
+          ref: ${{ inputs.source_ref }}
+          path: reviewed-source
+      - run: tests/docker-smoke.sh reviewed-source
+        env:
+          GCAI_SOURCE_REF: ${{ inputs.source_ref }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: environment-ci-evidence
+          path: |
+            receipts/application-grants.txt
+            receipts/ci-execution.json
